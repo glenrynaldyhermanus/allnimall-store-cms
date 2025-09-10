@@ -1,0 +1,9 @@
+---
+alwaysApply: true
+---
+
+1. Jangan ubah yang tidak saya minta ubah
+2. Untuk component gunakan mcp server shadcn
+3. Untuk icon gunakan lucide icon
+4. Database bisa mengacu ke database/schema.sql
+5. Jika ingin buat dokumentasi atau cek dokumentasi bisa di folder docs
