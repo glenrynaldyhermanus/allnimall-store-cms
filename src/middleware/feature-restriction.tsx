@@ -1,3 +1,4 @@
+import React from "react";
 import { NextRequest, NextResponse } from "next/server";
 import { featureFlagService, FeatureAccess } from "@/lib/feature-flag-service";
 

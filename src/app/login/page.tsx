@@ -13,8 +13,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Eye, EyeOff, PawPrint, UserPlus } from "lucide-react";
+import { Eye, EyeOff, PawPrint, UserPlus, Lock, Mail } from "lucide-react";
 import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
@@ -24,6 +25,7 @@ export default function LoginPage() {
 	const [isLoading, setIsLoading] = useState(false);
 	const router = useRouter();
 	const searchParams = useSearchParams();
+	const { signIn } = useAuth();
 
 	useEffect(() => {
 		const message = searchParams.get("message");
@@ -44,56 +46,83 @@ export default function LoginPage() {
 		e.preventDefault();
 		setIsLoading(true);
 
+		console.log("Login attempt:", { email, password: "***" });
+
 		try {
-			// Supabase login
-			const { data, error } = await supabase.auth.signInWithPassword({
-				email,
-				password,
-			});
+			const result = await signIn(email, password);
+			console.log("SignIn result:", result);
 
-			if (error) {
-				toast.error(error.message);
-			} else if (data.user) {
-				toast.success("Login successful!");
-				console.log("User logged in:", data.user.id, data.user.email);
+			if (result.success) {
+				// Get current user from auth context
+				const {
+					data: { user },
+				} = await supabase.auth.getUser();
 
-				// Get user's store and merchant info from role_assignments
-				const { data: roleAssignments } = await supabase
-					.from("role_assignments")
-					.select(
+				if (user) {
+					toast.success("Login successful!");
+					console.log("User logged in:", user.id, user.email);
+
+					// Get user's store and merchant info from role_assignments
+					const { data: roleAssignments, error: roleError } = await supabase
+						.from("role_assignments")
+						.select(
+							`
+							store_id,
+							merchant_id,
+							role_id,
+							stores!inner(name),
+							merchants!inner(name),
+							roles!inner(name)
 						`
-						store_id,
-						merchant_id,
-						stores!inner(name),
-						merchants!inner(name)
-					`
-					)
-					.eq("user_id", data.user.id)
-					.eq("is_active", true)
-					.single();
+						)
+						.eq("user_id", user.id)
+						.eq("is_active", true)
+						.maybeSingle();
 
-				if (roleAssignments) {
-					// Store user data in localStorage for easy access
-					localStorage.setItem("user_id", data.user.id);
-					localStorage.setItem("store_id", roleAssignments.store_id);
-					localStorage.setItem("merchant_id", roleAssignments.merchant_id);
-					localStorage.setItem("store_name", roleAssignments.stores.name);
-					localStorage.setItem("merchant_name", roleAssignments.merchants.name);
+					if (roleAssignments) {
+						// User has store access - store data and redirect to dashboard
+						localStorage.setItem("user_id", user.id);
+						localStorage.setItem("store_id", roleAssignments.store_id);
+						localStorage.setItem("merchant_id", roleAssignments.merchant_id);
+						localStorage.setItem("role_id", roleAssignments.role_id);
+						localStorage.setItem("store_name", roleAssignments.stores.name);
+						localStorage.setItem(
+							"merchant_name",
+							roleAssignments.merchants.name
+						);
+						localStorage.setItem("role_name", roleAssignments.roles.name);
 
-					console.log("User data stored:", {
-						user_id: data.user.id,
-						store_id: roleAssignments.store_id,
-						merchant_id: roleAssignments.merchant_id,
-						store_name: roleAssignments.stores.name,
-						merchant_name: roleAssignments.merchants.name,
-					});
+						console.log("User data stored:", {
+							user_id: user.id,
+							store_id: roleAssignments.store_id,
+							merchant_id: roleAssignments.merchant_id,
+							role_id: roleAssignments.role_id,
+							store_name: roleAssignments.stores.name,
+							merchant_name: roleAssignments.merchants.name,
+							role_name: roleAssignments.roles.name,
+						});
+
+						// Redirect to dashboard
+						router.push("/admin/dashboard");
+					} else if (roleError) {
+						// Database error
+						console.error("Role assignment error:", roleError);
+						toast.error("Database error. Please try again.");
+					} else {
+						// No role assignments found - new user needs to setup store
+						console.log("No store access found - redirecting to setup store");
+						toast.info("Welcome! Let's set up your first store.");
+						router.push("/setup-store");
+					}
+				} else {
+					toast.error(result.error || "Login failed");
 				}
-
-				// Let middleware handle the redirect based on role assignments
-				// Just reload the page to trigger middleware
-				window.location.reload();
+			} else {
+				console.log("Login failed:", result.error);
+				toast.error(result.error || "Login failed");
 			}
-		} catch {
+		} catch (error) {
+			console.log("Login error:", error);
 			toast.error("Something went wrong. Please try again.");
 		} finally {
 			setIsLoading(false);
@@ -158,7 +187,26 @@ export default function LoginPage() {
 							{isLoading ? "Signing in..." : "Sign In"}
 						</Button>
 					</form>
-					<div className="mt-6">
+					<div className="mt-6 space-y-3">
+						{/* Forgot Password Button */}
+						<Link href="/forgot-password" className="block">
+							<Button variant="link" className="w-full text-sm">
+								<Lock className="h-4 w-4 mr-2" />
+								Forgot your password?
+							</Button>
+						</Link>
+
+						{/* Divider */}
+						<div className="relative">
+							<div className="absolute inset-0 flex items-center">
+								<span className="w-full border-t" />
+							</div>
+							<div className="relative flex justify-center text-xs uppercase">
+								<span className="bg-white px-2 text-gray-500">Or</span>
+							</div>
+						</div>
+
+						{/* Sign Up Link */}
 						<div className="text-center">
 							<p className="text-sm text-gray-600 mb-2">
 								Don&apos;t have an account?

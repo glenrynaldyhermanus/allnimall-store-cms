@@ -13,7 +13,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { PawPrint, ArrowLeft, Mail, Eye, EyeOff } from "lucide-react";
+import {
+	PawPrint,
+	ArrowLeft,
+	Mail,
+	Eye,
+	EyeOff,
+	Lock,
+	CheckCircle,
+} from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
@@ -101,7 +109,7 @@ export default function SignUpPage() {
 				// Redirect to success page with email
 				router.push(`/signup/success?email=${encodeURIComponent(email)}`);
 			}
-		} catch (error) {
+		} catch {
 			toast.error("Something went wrong. Please try again.");
 		} finally {
 			setIsLoading(false);
@@ -217,7 +225,18 @@ export default function SignUpPage() {
 							)}
 						</Button>
 					</form>
-					<div className="mt-6 space-y-4">
+					<div className="mt-6 space-y-3">
+						{/* Divider */}
+						<div className="relative">
+							<div className="absolute inset-0 flex items-center">
+								<span className="w-full border-t" />
+							</div>
+							<div className="relative flex justify-center text-xs uppercase">
+								<span className="bg-white px-2 text-gray-500">Or</span>
+							</div>
+						</div>
+
+						{/* Back to Login */}
 						<div className="text-center">
 							<p className="text-sm text-gray-600 mb-2">
 								Already have an account?

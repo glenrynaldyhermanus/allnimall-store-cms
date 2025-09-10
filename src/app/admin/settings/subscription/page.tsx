@@ -15,10 +15,10 @@ import {
 	XCircle,
 	Trash2,
 } from "lucide-react";
-import {
-	PlanChangeRequestForm,
-	PlanChangeRequestsList,
-} from "@/components/plan-change-request";
+// import {
+// 	PlanChangeRequestForm,
+// 	PlanChangeRequestsList,
+// } from "@/components/plan-change-request";
 import Link from "next/link";
 
 export default function SubscriptionManagementPage() {
@@ -111,7 +111,7 @@ export default function SubscriptionManagementPage() {
 					</CardHeader>
 					<CardContent className="space-y-6">
 						{subscription ? (
-						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 							<div className="space-y-2">
 								<h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
 									Plan
@@ -159,55 +159,52 @@ export default function SubscriptionManagementPage() {
 									</span>
 								</div>
 							</div>
-						</div>
+							</div>
 
-						{/* Actions */}
-						<div className="flex flex-wrap gap-3 pt-4 border-t">
-							<Button variant="outline" asChild>
-								<Link href="/pricing">Change Plan</Link>
-							</Button>
-							<Button variant="outline" asChild>
-								<Link href="/admin/billing">View Billing History</Link>
-							</Button>
-							<Button variant="outline" asChild>
-								<Link href="/admin/settings/payment-methods">
-									Payment Methods
-								</Link>
-							</Button>
-							{!cancelAtPeriodEnd ? (
-								<Button
-									variant="destructive"
-									onClick={handleCancelSubscription}>
-									<Trash2 className="h-4 w-4 mr-2" />
-									Cancel Subscription
+							{/* Actions */}
+							<div className="flex flex-wrap gap-3 pt-4 border-t">
+								<Button variant="outline" asChild>
+									<Link href="/pricing">Change Plan</Link>
 								</Button>
-							) : (
-								<Button
-									variant="default"
-									onClick={handleReactivateSubscription}>
-									<CheckCircle className="h-4 w-4 mr-2" />
-									Reactivate Subscription
+								<Button variant="outline" asChild>
+									<Link href="/admin/billing">View Billing History</Link>
 								</Button>
-							)}
-						</div>
-					</CardContent>
-				</Card>
+								<Button variant="outline" asChild>
+									<Link href="/admin/settings/payment-methods">
+										Payment Methods
+									</Link>
+								</Button>
+								{!cancelAtPeriodEnd ? (
+									<Button
+										variant="destructive"
+										onClick={handleCancelSubscription}>
+										<Trash2 className="h-4 w-4 mr-2" />
+										Cancel Subscription
+									</Button>
+								) : (
+									<Button
+										variant="default"
+										onClick={handleReactivateSubscription}>
+										<CheckCircle className="h-4 w-4 mr-2" />
+										Reactivate Subscription
+									</Button>
+								)}
+							</div>
 
-				{/* Plan Change Requests */}
-				<div className="space-y-6">
-					<div className="flex items-center justify-between">
-						<h2 className="text-2xl font-bold">Plan Changes</h2>
-						<PlanChangeRequestForm
-							currentPlanId={subscription.plan.name}
-							onRequestSubmitted={() => {
-								// Refresh the requests list
-								window.location.reload();
-							}}
-						/>
-					</div>
+							{/* Plan Change Requests */}
+							<div className="space-y-6">
+								<div className="flex items-center justify-between">
+									<h2 className="text-2xl font-bold">Plan Changes</h2>
+									<Button variant="outline">
+										Request Plan Change
+									</Button>
+								</div>
 
-					<PlanChangeRequestsList />
-				</div>
+								<div className="text-center py-8">
+									<Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+									<p className="text-gray-500">Plan change requests coming soon</p>
+								</div>
+							</div>
 						) : (
 							<div className="text-center py-8">
 								<CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -217,6 +214,8 @@ export default function SubscriptionManagementPage() {
 								</p>
 							</div>
 						)}
+					</CardContent>
+				</Card>
 
 				{/* Billing Settings */}
 				<Card>

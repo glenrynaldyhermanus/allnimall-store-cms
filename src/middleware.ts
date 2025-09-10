@@ -79,7 +79,15 @@ export async function middleware(req: NextRequest) {
 	});
 
 	// Public routes that don't require authentication
-	const publicRoutes = ["/", "/login", "/signup", "/setup-store"];
+	const publicRoutes = [
+		"/",
+		"/login",
+		"/signup",
+		"/setup-store",
+		"/forgot-password",
+		"/reset-password",
+		"/verify-email",
+	];
 	const isPublicRoute =
 		publicRoutes.includes(req.nextUrl.pathname) ||
 		req.nextUrl.pathname.startsWith("/signup/success");

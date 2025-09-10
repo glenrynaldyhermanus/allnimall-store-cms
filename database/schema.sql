@@ -652,6 +652,10 @@ ALTER TABLE sales_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE store_carts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE store_cart_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE merchant_customers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE referral_agents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE referral_commissions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE referral_payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE referral_settings ENABLE ROW LEVEL SECURITY;
 
 -- Note: merchant_partnerships, merchant_service_availability, and service_bookings have RLS disabled
 
@@ -1137,6 +1141,81 @@ COMMENT ON TABLE merchant_service_availability IS 'Service availability schedule
 COMMENT ON TABLE service_bookings IS 'Unified booking system for all service types';
 
 -- =============================================
+-- REFERRAL SYSTEM TABLES
+-- =============================================
+
+-- Referral agents table
+CREATE TABLE referral_agents (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ DEFAULT (now() AT TIME ZONE 'utc'),
+    created_by UUID DEFAULT '00000000-0000-0000-0000-000000000000',
+    updated_at TIMESTAMPTZ,
+    updated_by UUID,
+    deleted_at TIMESTAMPTZ,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    phone TEXT NOT NULL UNIQUE,
+    referral_code TEXT UNIQUE NOT NULL,
+    is_active BOOLEAN DEFAULT true,
+    registered_at TIMESTAMPTZ DEFAULT (now() AT TIME ZONE 'utc'),
+    total_referrals INTEGER DEFAULT 0,
+    total_earnings NUMERIC DEFAULT 0,
+    bank_account TEXT,
+    bank_name TEXT,
+    account_holder_name TEXT
+);
+
+-- Referral commissions table
+CREATE TABLE referral_commissions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ DEFAULT (now() AT TIME ZONE 'utc'),
+    created_by UUID DEFAULT '00000000-0000-0000-0000-000000000000',
+    updated_at TIMESTAMPTZ,
+    updated_by UUID,
+    deleted_at TIMESTAMPTZ,
+    agent_id UUID NOT NULL REFERENCES referral_agents(id),
+    user_id UUID NOT NULL REFERENCES auth.users(id),
+    subscription_id UUID NOT NULL REFERENCES user_subscriptions(id),
+    amount NUMERIC NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('pending', 'paid', 'cancelled')),
+    commission_date TIMESTAMPTZ DEFAULT (now() AT TIME ZONE 'utc'),
+    payment_date TIMESTAMPTZ,
+    billing_period_start TIMESTAMPTZ NOT NULL,
+    billing_period_end TIMESTAMPTZ NOT NULL
+);
+
+-- Referral payments table
+CREATE TABLE referral_payments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ DEFAULT (now() AT TIME ZONE 'utc'),
+    created_by UUID DEFAULT '00000000-0000-0000-0000-000000000000',
+    updated_at TIMESTAMPTZ,
+    updated_by UUID,
+    deleted_at TIMESTAMPTZ,
+    agent_id UUID NOT NULL REFERENCES referral_agents(id),
+    total_amount NUMERIC NOT NULL,
+    payment_date TIMESTAMPTZ,
+    status TEXT NOT NULL CHECK (status IN ('pending', 'paid', 'failed', 'cancelled')),
+    payment_method TEXT NOT NULL,
+    transaction_reference TEXT,
+    commission_ids UUID[] NOT NULL
+);
+
+-- Referral settings table
+CREATE TABLE referral_settings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ DEFAULT (now() AT TIME ZONE 'utc'),
+    created_by UUID DEFAULT '00000000-0000-0000-0000-000000000000',
+    updated_at TIMESTAMPTZ,
+    updated_by UUID,
+    deleted_at TIMESTAMPTZ,
+    commission_amount NUMERIC NOT NULL DEFAULT 20000,
+    payment_frequency TEXT NOT NULL DEFAULT 'monthly' CHECK (payment_frequency IN ('weekly', 'monthly', 'quarterly')),
+    minimum_payout NUMERIC NOT NULL DEFAULT 100000,
+    is_active BOOLEAN DEFAULT true
+);
+
+-- =============================================
 -- SAAS SUBSCRIPTION MANAGEMENT TABLES
 -- =============================================
 
@@ -1189,6 +1268,8 @@ CREATE TABLE user_subscriptions (
     deleted_at TIMESTAMPTZ,
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     plan_id UUID NOT NULL REFERENCES subscription_plans(id),
+    referral_code TEXT,
+    agent_id UUID REFERENCES referral_agents(id),
     status TEXT NOT NULL CHECK (status IN ('active', 'trial', 'cancelled', 'expired', 'past_due')),
     stripe_subscription_id TEXT,
     stripe_customer_id TEXT,

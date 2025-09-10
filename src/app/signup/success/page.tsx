@@ -20,12 +20,14 @@ import {
 	Clock,
 } from "lucide-react";
 import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function SignUpSuccessPage() {
 	const [isResending, setIsResending] = useState(false);
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const email = searchParams.get("email");
+	const { resendVerification } = useAuth();
 
 	const handleResendEmail = async () => {
 		if (!email) {
@@ -35,9 +37,14 @@ export default function SignUpSuccessPage() {
 
 		setIsResending(true);
 		try {
-			// Here you would typically call your API to resend verification email
-			// For now, we'll just show a success message
-			toast.success("Verification email sent again!");
+			const result = await resendVerification(email);
+			if (result.success) {
+				toast.success("Verification email sent again!");
+			} else {
+				toast.error(
+					result.error || "Failed to resend email. Please try again."
+				);
+			}
 		} catch (error) {
 			toast.error("Failed to resend email. Please try again.");
 		} finally {
